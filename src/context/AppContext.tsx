@@ -13,6 +13,8 @@ interface AppState {
     session: Session | null;
     loading: boolean;
     profileId: string | null;
+    pin: string | null;
+    full_name: string | null;
 }
 
 interface LogEntry {
@@ -41,6 +43,8 @@ const defaultState: AppState = {
     session: null,
     loading: true,
     profileId: null,
+    pin: null,
+    full_name: null,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -110,6 +114,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 cycleLength: profile?.cycle_length || 28,
                 periodLength: profile?.period_length || 5,
                 goal: profile?.goal || 'track',
+                pin: profile?.pin || null,
+                full_name: profile?.full_name || null,
                 logs: logsMap
             }));
         } catch (error) {
@@ -128,6 +134,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (updates.cycleLength !== undefined) profileUpdates.cycle_length = updates.cycleLength;
             if (updates.periodLength !== undefined) profileUpdates.period_length = updates.periodLength;
             if (updates.goal !== undefined) profileUpdates.goal = updates.goal;
+            if (updates.pin !== undefined) profileUpdates.pin = updates.pin;
+            if (updates.full_name !== undefined) profileUpdates.full_name = updates.full_name;
 
             if (Object.keys(profileUpdates).length > 0) {
                 await supabase

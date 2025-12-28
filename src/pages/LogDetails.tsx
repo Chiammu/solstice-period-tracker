@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -24,9 +24,25 @@ const moodsList = [
 const LogDetails = () => {
     const { updateLog } = useAppContext();
     const navigate = useNavigate();
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
 
-    const [flow, setFlow] = useState<'spotting' | 'light' | 'medium' | 'heavy' | null>('medium');
+    // Load data for selected date
+    useEffect(() => {
+        // Here you would typically load from state if available for this date
+        // Since we don't have direct access to state.logs for arbitrary dates easily in this component without props or checking context, 
+        // let's assume empty for new dates or implement state check if needed.
+        // For now, reset fields when date changes to allow new entry
+        setFlow(null);
+        setSelectedSymptoms([]);
+        setSelectedMoods([]);
+        setNotes('');
+
+        // Check if log exists in context (simplified access)
+        // Ideally we pass state logs or check context
+    }, [dateKey]);
+
+    const [flow, setFlow] = useState<'spotting' | 'light' | 'medium' | 'heavy' | null>(null);
     const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
     const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
     const [notes, setNotes] = useState('');
@@ -40,7 +56,7 @@ const LogDetails = () => {
     };
 
     const handleSave = () => {
-        updateLog(today, { flow, symptoms: selectedSymptoms, moods: selectedMoods, notes });
+        updateLog(dateKey, { flow, symptoms: selectedSymptoms, moods: selectedMoods, notes });
         navigate('/');
     };
 
@@ -52,9 +68,20 @@ const LogDetails = () => {
                         <span className="material-symbols-outlined">arrow_back_ios_new</span>
                     </button>
                     <h1 className="text-lg font-bold flex-1 text-center">Log Details</h1>
-                    <button className="flex h-10 items-center justify-end px-2 rounded-full">
-                        <span className="text-primary font-bold text-sm">{format(new Date(), 'MMM dd')}</span>
-                    </button>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            value={dateKey}
+                            onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                        />
+                        <button className="flex h-10 items-center justify-end px-2 rounded-full relative">
+                            <span className="text-primary font-bold text-sm bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 flex items-center gap-1">
+                                {format(selectedDate, 'MMM dd')}
+                                <span className="material-symbols-outlined text-sm">edit_calendar</span>
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </header>
 

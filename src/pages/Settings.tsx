@@ -3,10 +3,10 @@ import { useAppContext } from '../context/AppContext';
 const Settings = () => {
     const { state } = useAppContext();
 
+    const { signOut } = useAppContext();
     const handleReset = () => {
-        if (confirm("Reset all data?")) {
-            localStorage.removeItem('period_tracker_state');
-            window.location.reload();
+        if (confirm("Are you sure you want to sign out?")) {
+            signOut();
         }
     };
 
@@ -26,8 +26,8 @@ const Settings = () => {
                             </button>
                         </div>
                         <div className="text-center">
-                            <h3 className="text-xl font-bold">Jane Doe</h3>
-                            <p className="text-gray-500 dark:text-[#b99db0] text-sm font-medium mt-1">Premium Member</p>
+                            <h3 className="text-xl font-bold">{state.full_name || 'User'}</h3>
+                            <p className="text-gray-500 dark:text-[#b99db0] text-sm font-medium mt-1">Free Plan</p>
                         </div>
                     </div>
                 </div>
@@ -61,7 +61,7 @@ const Settings = () => {
                         onClick={handleReset}
                         className="w-full py-4 text-center rounded-xl bg-white dark:bg-surface-dark text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 font-bold transition-colors shadow-sm"
                     >
-                        Reset All Data
+                        Sign Out
                     </button>
                 </div>
             </main>

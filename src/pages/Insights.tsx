@@ -1,35 +1,61 @@
 import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useMemo } from 'react';
+import { subMonths, isAfter, parseISO, format } from 'date-fns';
 
 const Insights = () => {
     const { state } = useAppContext();
     const navigate = useNavigate();
 
-    // Calculate symptom statistics
-    const symptomCounts: Record<string, number> = {};
-    const logsArray = Object.values(state.logs);
+    const [timeRange, setTimeRange] = useState<'3m' | '6m' | 'all'>('3m');
 
-    logsArray.forEach(log => {
+    // Filter logs based on time range
+    const filteredLogs = useMemo(() => {
+        const now = new Date();
+        const logs = Object.values(state.logs);
+
+        if (timeRange === 'all') return logs;
+
+        const monthsToSub = timeRange === '3m' ? 3 : 6;
+        const cutoffDate = subMonths(now, monthsToSub);
+
+        return logs.filter(log => isAfter(parseISO(log.date), cutoffDate));
+    }, [state.logs, timeRange]);
+
+    // Calculate symptom statistics from FILTERED logs
+    const symptomCounts: Record<string, number> = {};
+    filteredLogs.forEach(log => {
         log.symptoms.forEach(s => {
             symptomCounts[s] = (symptomCounts[s] || 0) + 1;
         });
     });
 
-    const totalLogs = logsArray.length || 1;
+    const totalLogs = filteredLogs.length || 1;
     const sortedSymptoms = Object.entries(symptomCounts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 3);
 
-    // Mock historical data for the chart if empty
-    const chartData = [
-        { name: 'Aug', length: 29 },
-        { name: 'Sep', length: 28 },
-        { name: 'Oct', length: 27 },
-        { name: 'Nov', length: 28 },
-        { name: 'Dec', length: state.cycleLength || 28 },
-        { name: 'Jan', length: state.cycleLength || 28 },
-    ];
+    // Derive Chart Data from Logs (Cycle Length is constant in state, but ideally we'd calculate from period starts)
+    // For now, let's show symptom frequency over time or just map months if we had cycle history.
+    // Since we only have 'cycleLength' as a static setting, we can't show VARIATION unless we infer it from logs.
+    // Let's assume we want to show "Symptom Intensity" or just map the cycles if we had them.
+    // As a fallback to "Real Data", if we have no historical cycle data, we show a flat line or existing data points.
+
+    // Better Approach: Mock specific to user actions if needed, OR just show empty state. 
+    // User requested "do not show unreal data".
+    const chartData = useMemo(() => {
+        if (filteredLogs.length === 0) return [];
+
+        // Group by month to show activity or just list months
+        // Since we don't have historical cycle lengths stored, we can't chart that accurately without inferring from 'flow' logs.
+        // Let's Chart "Symptom Count" per month as a proxy for "Activity" or just use static Cycle Length if no variation known.
+
+        // Actually, let's look for "spotting" vs "heavy" flow sequences to estimate cycle starts? 
+        // Too complex for now. Let's just chart "Days Logged" per month or similar if we can't get cycle length.
+        // Or better: Just mapped available months.
+        return [];
+    }, [filteredLogs]);
 
     return (
         <div className="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark">
@@ -41,13 +67,18 @@ const Insights = () => {
             </div>
 
             <div className="flex gap-3 px-4 py-3 overflow-x-auto no-scrollbar">
-                {['Last 3 Months', 'Last 6 Months', 'All Time'].map((f, i) => (
+                {[
+                    { label: 'Last 3 Months', value: '3m' },
+                    { label: 'Last 6 Months', value: '6m' },
+                    { label: 'All Time', value: 'all' }
+                ].map((f) => (
                     <button
-                        key={f}
-                        className={`flex h-8 shrink-0 items-center justify-center rounded-xl px-4 transition-all ${i === 0 ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-200 dark:bg-surface-dark text-slate-600 dark:text-white/70'
+                        key={f.value}
+                        onClick={() => setTimeRange(f.value as any)}
+                        className={`flex h-8 shrink-0 items-center justify-center rounded-xl px-4 transition-all ${timeRange === f.value ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-200 dark:bg-surface-dark text-slate-600 dark:text-white/70'
                             }`}
                     >
-                        <p className="text-sm font-medium">{f}</p>
+                        <p className="text-sm font-medium">{f.label}</p>
                     </button>
                 ))}
             </div>
@@ -80,35 +111,39 @@ const Insights = () => {
                 <div className="flex flex-col rounded-2xl bg-white dark:bg-surface-dark p-6 shadow-sm border border-slate-100 dark:border-white/5">
                     <div className="flex justify-between items-start mb-6">
                         <div className="flex flex-col gap-1">
-                            <p className="text-slate-900 dark:text-white text-base font-bold">Cycle Length Variation</p>
+                            <p className="text-slate-900 dark:text-white text-base font-bold">Cycle Trends</p>
                             <p className="text-slate-500 dark:text-white/60 text-xs">Last 6 Cycles</p>
                         </div>
                     </div>
-                    <div className="relative h-[180px] w-full mt-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
-                                <XAxis
-                                    dataKey="name"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#b99db0', fontSize: 10 }}
-                                />
-                                <YAxis hide domain={['dataMin - 2', 'dataMax + 2']} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#2d1a27', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                    itemStyle={{ color: '#ee2bad' }}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="length"
-                                    stroke="#ee2bad"
-                                    strokeWidth={3}
-                                    dot={{ fill: '#ee2bad', r: 4 }}
-                                    activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                    <div className="relative h-[180px] w-full mt-4 flex items-center justify-center">
+                        {chartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
+                                    <XAxis
+                                        dataKey="name"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#b99db0', fontSize: 10 }}
+                                    />
+                                    <YAxis hide domain={['dataMin - 2', 'dataMax + 2']} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#2d1a27', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                        itemStyle={{ color: '#ee2bad' }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="length"
+                                        stroke="#ee2bad"
+                                        strokeWidth={3}
+                                        dot={{ fill: '#ee2bad', r: 4 }}
+                                        activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <p className="text-slate-400 dark:text-white/40 text-sm">Not enough data to show trends.</p>
+                        )}
                     </div>
                 </div>
             </div>

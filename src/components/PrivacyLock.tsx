@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useAppContext } from '../context/AppContext';
 
 interface PrivacyLockProps {
     onUnlock: () => void;
 }
 
 const PrivacyLock: React.FC<PrivacyLockProps> = ({ onUnlock }) => {
+    const { state } = useAppContext();
     const [pin, setPin] = useState('');
     const [error, setError] = useState(false);
-    const correctPin = '1234'; // Default PIN for demo
+    const correctPin = state.pin || '1234'; // Use user's PIN or fallback
 
     const handleKeyPress = (num: string) => {
         if (pin.length < 4) {
@@ -73,7 +75,7 @@ const PrivacyLock: React.FC<PrivacyLockProps> = ({ onUnlock }) => {
             </div>
 
             <button
-                onClick={() => alert("Hint: 1234")}
+                onClick={() => alert("Please sign in again if you forgot your PIN.")}
                 className="mt-12 text-primary text-sm font-semibold hover:underline"
             >
                 Forgot PIN?
