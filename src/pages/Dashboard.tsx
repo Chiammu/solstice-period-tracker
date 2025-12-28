@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfToday } from 'date-fns';
+import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfToday, subDays, parseISO } from 'date-fns';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -38,12 +39,43 @@ const Dashboard = () => {
     const prevMonth = () => setDisplayedDate(addDays(startOfMonth(displayedDate), -1));
     const resetToToday = () => setDisplayedDate(today);
 
+    // Calculate Inferred Period Days based on Start Logs
+    const inferredPeriodDates = useMemo(() => {
+        const dates = new Set<string>();
+        const sortedLogKeys = Object.keys(state.logs).sort();
+
+        let lastInferredEnd: Date | null = null;
+
+        sortedLogKeys.forEach(dateKey => {
+            const log = state.logs[dateKey];
+            if (log.flow) {
+                const current = parseISO(dateKey);
+                // Check if this is a new start (either no previous end, or current is after previous end)
+                // Also allowing a small gap (e.g. if I log day 1, then day 28, day 28 is new)
+                // A simple heuristic: If the previous day was NOT logged with flow, assume start.
+
+                const prevDay = subDays(current, 1);
+                const prevKey = format(prevDay, 'yyyy-MM-dd');
+                const isContinuation = state.logs[prevKey]?.flow;
+
+                if (!isContinuation) {
+                    // This is a start date. Project forward state.periodLength
+                    for (let i = 0; i < state.periodLength; i++) {
+                        const d = addDays(current, i);
+                        dates.add(format(d, 'yyyy-MM-dd'));
+                    }
+                }
+            }
+        });
+        return dates;
+    }, [state.logs, state.periodLength]);
+
     const getDayStatus = (date: Date) => {
         const dateKey = format(date, 'yyyy-MM-dd');
         const log = state.logs[dateKey];
 
-        // 1. If explicitly logged as period (flow exists), always show period
-        if (log?.flow) return 'period';
+        // 1. If explicitly logged as period OR inferred from a start log
+        if (log?.flow || inferredPeriodDates.has(dateKey)) return 'period';
 
         // 2. If it is in the PAST (before today) but NOT logged, do NOT show prediction
         if (isBefore(date, startOfToday())) return 'normal';
