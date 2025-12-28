@@ -1,9 +1,16 @@
 import { useAppContext } from '../context/AppContext';
+import { useState } from 'react';
 
 const Settings = () => {
-    const { state } = useAppContext();
+    const { state, updateState, signOut } = useAppContext();
+    const [editing, setEditing] = useState<{ label: string, key: keyof typeof state, type: 'text' | 'number', value: any } | null>(null);
 
-    const { signOut } = useAppContext();
+    const handleSave = () => {
+        if (!editing) return;
+        updateState({ [editing.key]: editing.value });
+        setEditing(null);
+    };
+
     const handleReset = () => {
         if (confirm("Are you sure you want to sign out?")) {
             signOut();
@@ -21,7 +28,10 @@ const Settings = () => {
                     <div className="flex flex-col items-center gap-4 bg-white dark:bg-surface-dark p-6 rounded-xl shadow-sm">
                         <div className="relative">
                             <div className="bg-center bg-cover rounded-full h-24 w-24 ring-4 ring-background-light dark:ring-background-dark" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuD_hKGegk0kOpNj0ipjUJfUIXJ2OaQzwLZHakdXddJvCi_IKaR3vTr6NFXE1VNnNTDIqJWrj0grJvrJouhfU-J9E3FHSaoA4kmK58MiTU8GKEUDONcwVFjC4LtNIQ6HB9qIGwdfj_uP05FaqFmmvwyKvJtECC_MX4wZ5iCa79bFEXbdVgwFxL63Zk_a_9ZHKKqJfViFRU8AbRYyHK_mOXKPvKqi5EF9OJJa3Rb8GHlCisUYuPJ4Ac0fZfoL7cprFzZgMnEwbnX1Fwy2")' }}></div>
-                            <button className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 shadow-lg border-2 border-background-light dark:border-background-dark flex items-center justify-center">
+                            <button
+                                onClick={() => setEditing({ label: 'Full Name', key: 'full_name', type: 'text', value: state.full_name || '' })}
+                                className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 shadow-lg border-2 border-background-light dark:border-background-dark flex items-center justify-center"
+                            >
                                 <span className="material-symbols-outlined text-[16px]">edit</span>
                             </button>
                         </div>
@@ -36,11 +46,16 @@ const Settings = () => {
                     <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider px-6 pb-2">Cycle & Health</h3>
                     <div className="flex flex-col gap-[1px] bg-gray-200 dark:bg-white/5 mx-4 rounded-xl overflow-hidden">
                         {[
-                            { label: 'Cycle Length', value: `${state.cycleLength} Days`, icon: 'sync', color: 'bg-blue-500' },
-                            { label: 'Period Length', value: `${state.periodLength} Days`, icon: 'water_drop', color: 'bg-primary' },
-                            { label: 'Contraceptive', value: 'None', icon: 'medication', color: 'bg-purple-500' },
-                        ].map(item => (
-                            <button key={item.label} className="flex items-center gap-4 bg-white dark:bg-surface-dark px-4 min-h-[60px] justify-between hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
+                            { label: 'Cycle Length', key: 'cycleLength', value: `${state.cycleLength} Days`, icon: 'sync', color: 'bg-blue-500', type: 'number' },
+                            { label: 'Period Length', key: 'periodLength', value: `${state.periodLength} Days`, icon: 'water_drop', color: 'bg-primary', type: 'number' },
+                            // Contraceptive not editable yet
+                            { label: 'Contraceptive', key: 'goal', value: 'None', icon: 'medication', color: 'bg-purple-500', type: 'text' },
+                        ].map((item: any) => (
+                            <button
+                                key={item.label}
+                                onClick={() => item.key !== 'goal' && setEditing({ label: item.label, key: item.key, type: item.type, value: state[item.key as keyof typeof state] })}
+                                className="flex items-center gap-4 bg-white dark:bg-surface-dark px-4 min-h-[60px] justify-between hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+                            >
                                 <div className="flex items-center gap-4">
                                     <div className={`text-white flex items-center justify-center rounded-full ${item.color} size-8 shadow-sm`}>
                                         <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
@@ -65,6 +80,36 @@ const Settings = () => {
                     </button>
                 </div>
             </main>
+
+            {/* Edit Modal */}
+            {editing && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-surface-dark w-full max-w-sm rounded-2xl p-6 shadow-xl">
+                        <h3 className="text-lg font-bold mb-4">Edit {editing.label}</h3>
+                        <input
+                            type={editing.type}
+                            value={editing.value}
+                            onChange={(e) => setEditing({ ...editing, value: editing.type === 'number' ? Number(e.target.value) : e.target.value })}
+                            className="w-full bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary mb-6 text-slate-900 dark:text-white"
+                            autoFocus
+                        />
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setEditing(null)}
+                                className="flex-1 py-3 rounded-xl font-semibold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/70"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                className="flex-1 py-3 rounded-xl font-semibold bg-primary text-white hover:bg-primary/90"
+                            >
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

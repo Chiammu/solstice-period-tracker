@@ -7,7 +7,7 @@ interface PrivacyLockProps {
 }
 
 const PrivacyLock: React.FC<PrivacyLockProps> = ({ onUnlock }) => {
-    const { state } = useAppContext();
+    const { state, signOut } = useAppContext();
     const [pin, setPin] = useState('');
     const [error, setError] = useState(false);
     const correctPin = state.pin || '1234'; // Use user's PIN or fallback
@@ -75,7 +75,11 @@ const PrivacyLock: React.FC<PrivacyLockProps> = ({ onUnlock }) => {
             </div>
 
             <button
-                onClick={() => alert("Please sign in again if you forgot your PIN.")}
+                onClick={() => {
+                    if (confirm("Sign out to reset PIN? You will need to log in again.")) {
+                        signOut();
+                    }
+                }}
                 className="mt-12 text-primary text-sm font-semibold hover:underline"
             >
                 Forgot PIN?

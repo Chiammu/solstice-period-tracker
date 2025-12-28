@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfToday } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -39,6 +39,16 @@ const Dashboard = () => {
     const resetToToday = () => setDisplayedDate(today);
 
     const getDayStatus = (date: Date) => {
+        const dateKey = format(date, 'yyyy-MM-dd');
+        const log = state.logs[dateKey];
+
+        // 1. If explicitly logged as period (flow exists), always show period
+        if (log?.flow) return 'period';
+
+        // 2. If it is in the PAST (before today) but NOT logged, do NOT show prediction
+        if (isBefore(date, startOfToday())) return 'normal';
+
+        // 3. For Future/Today: Use Prediction logic
         const diff = differenceInDays(date, lastStart) % state.cycleLength;
         const normalizedDiff = diff < 0 ? diff + state.cycleLength : diff;
 
