@@ -13,14 +13,15 @@ const Insights = () => {
     // Filter logs based on time range
     const filteredLogs = useMemo(() => {
         const now = new Date();
-        const logs = Object.values(state.logs);
+        // state.logs is Record<date, LogEntry>. map entries to include date.
+        const logs = Object.entries(state.logs).map(([date, data]) => ({ date, ...data }));
 
         if (timeRange === 'all') return logs;
 
         const monthsToSub = timeRange === '3m' ? 3 : 6;
         const cutoffDate = subMonths(now, monthsToSub);
 
-        return logs.filter(log => isAfter(parseISO(log.date || new Date().toISOString()), cutoffDate));
+        return logs.filter(log => isAfter(parseISO(log.date), cutoffDate));
     }, [state.logs, timeRange]);
 
     // Calculate symptom statistics from FILTERED logs
