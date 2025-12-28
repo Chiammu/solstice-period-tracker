@@ -5,7 +5,7 @@
     "installCommand": "npm install",
     "framework": "vite",
     "env": {
-        "VITE_SUPABASE_URL": "@vite_supabase_url",
-        "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key"
+        "VITE_SUPABASE_URL": "https://deinmqdhayedcbxjtfpq.supabase.co",
+        "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaW5tcWRoYXllZGNieGp0ZnBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MzMyMzcsImV4cCI6MjA4MjUwOTIzN30.IcSxkOOndyyzIZpurKiLa9XOTPnyhJTObM_uNunyKHc"
     }
 }
