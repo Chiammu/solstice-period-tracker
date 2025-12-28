@@ -80,6 +80,8 @@ Run the SQL schema in your Supabase SQL Editor (found in `schema.sql`):
 
 MIT
 
+<!-- Deployment triggered on Dec 28, 2025 -->
+
 ## Author
 
 Built with ❤️ for better health tracking
