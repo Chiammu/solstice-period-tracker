@@ -2,7 +2,7 @@ import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useState, useMemo } from 'react';
-import { subMonths, isAfter, parseISO, format } from 'date-fns';
+import { subMonths, isAfter, parseISO } from 'date-fns';
 
 const Insights = () => {
     const { state } = useAppContext();
@@ -20,7 +20,7 @@ const Insights = () => {
         const monthsToSub = timeRange === '3m' ? 3 : 6;
         const cutoffDate = subMonths(now, monthsToSub);
 
-        return logs.filter(log => isAfter(parseISO(log.date), cutoffDate));
+        return logs.filter(log => isAfter(parseISO(log.date || new Date().toISOString()), cutoffDate));
     }, [state.logs, timeRange]);
 
     // Calculate symptom statistics from FILTERED logs
