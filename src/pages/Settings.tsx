@@ -1,8 +1,7 @@
-import React from 'react';
 import { useAppContext } from '../context/AppContext';
 
 const Settings = () => {
-    const { state, updateState } = useAppContext();
+    const { state } = useAppContext();
 
     const handleReset = () => {
         if (confirm("Reset all data?")) {

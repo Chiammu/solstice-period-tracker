@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isAfter, isBefore } from 'date-fns';
+import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -17,20 +17,16 @@ const Dashboard = () => {
     // Phases (simplified)
     let phase = "Follicular Phase";
     let phaseIcon = "eco";
-    let phaseColor = "text-primary";
 
     if (cycleDay <= state.periodLength) {
         phase = "Menstrual Phase";
         phaseIcon = "water_drop";
-        phaseColor = "text-red-400";
     } else if (cycleDay >= 13 && cycleDay <= 15) {
         phase = "Ovulatory Phase";
         phaseIcon = "auto_awesome";
-        phaseColor = "text-teal-400";
     } else if (cycleDay > 15) {
         phase = "Luteal Phase";
         phaseIcon = "nightlight";
-        phaseColor = "text-purple-400";
     }
 
     const days = eachDayOfInterval({

@@ -1,0 +1,12 @@
+﻿src/App.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/PrivacyLock.tsx(1,27): error TS6133: 'useEffect' is declared but its value is never read.
+src/components/PrivacyLock.tsx(2,18): error TS6133: 'AnimatePresence' is declared but its value is never read.
+src/pages/Auth.tsx(6,11): error TS6133: 'navigate' is declared but its value is never read.
+src/pages/Auth.tsx(9,22): error TS6133: 'setIsSignUp' is declared but its value is never read.
+src/pages/Dashboard.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/LogDetails.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/Onboarding.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/Settings.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/pages/Settings.tsx(5,20): error TS6133: 'updateState' is declared but its value is never read.
+src/pages/Setup.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/Setup.tsx(2,1): error TS6133: 'motion' is declared but its value is never read.

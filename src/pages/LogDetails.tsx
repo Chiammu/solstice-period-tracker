@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -93,8 +93,8 @@ const LogDetails = () => {
                                 key={s.id}
                                 onClick={() => toggleSymptom(s.id)}
                                 className={`flex items-center gap-3 rounded-xl border p-4 transition-all duration-200 ${selectedSymptoms.includes(s.id)
-                                        ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(238,43,173,0.15)]'
-                                        : 'border-gray-200 dark:border-white/10 bg-white dark:bg-surface-dark'
+                                    ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(238,43,173,0.15)]'
+                                    : 'border-gray-200 dark:border-white/10 bg-white dark:bg-surface-dark'
                                     }`}
                             >
                                 <span className={`material-symbols-outlined ${selectedSymptoms.includes(s.id) ? 'text-primary fill-1' : 'text-gray-400'}`}>{s.icon}</span>
@@ -118,8 +118,8 @@ const LogDetails = () => {
                                 key={m.id}
                                 onClick={() => toggleMood(m.id)}
                                 className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-3 py-4 transition-all ${selectedMoods.includes(m.id)
-                                        ? 'border-primary bg-primary/10'
-                                        : 'border-gray-200 dark:border-white/10 bg-white dark:bg-surface-dark'
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-gray-200 dark:border-white/10 bg-white dark:bg-surface-dark'
                                     }`}
                             >
                                 <span className={`material-symbols-outlined text-3xl ${selectedMoods.includes(m.id) ? 'text-primary fill-1' : 'text-gray-400'}`}>{m.icon}</span>

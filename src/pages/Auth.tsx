@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
-    const [isSignUp, setIsSignUp] = useState(false);
     const [message, setMessage] = useState('');
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -15,29 +12,15 @@ const Auth = () => {
         setMessage('');
 
         try {
-            if (isSignUp) {
-                // Sign Up with Magic Link logic or Password logic.
-                // For simplicity, using Magic Link via email for both or just OTP.
-                // Let's use Magic Link for now as it doesn't require password management UI.
-                const { error } = await supabase.auth.signInWithOtp({
-                    email,
-                    options: {
-                        emailRedirectTo: window.location.origin
-                    }
-                });
-                if (error) throw error;
-                setMessage('Check your email for the login link!');
-            } else {
-                // Sign In
-                const { error } = await supabase.auth.signInWithOtp({
-                    email,
-                    options: {
-                        emailRedirectTo: window.location.origin
-                    }
-                });
-                if (error) throw error;
-                setMessage('Check your email for the login link!');
-            }
+            // Sign In / Sign Up with Magic Link
+            const { error } = await supabase.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: window.location.origin
+                }
+            });
+            if (error) throw error;
+            setMessage('Check your email for the login link!');
         } catch (error: any) {
             setMessage(error.error_description || error.message);
         } finally {
