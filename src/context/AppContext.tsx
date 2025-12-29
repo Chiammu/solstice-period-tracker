@@ -15,9 +15,10 @@ interface AppState {
     profileId: string | null;
     pin: string | null;
     full_name: string | null;
+    notificationsEnabled: boolean;
 }
 
-interface LogEntry {
+export interface LogEntry {
     id?: string;
     flow: 'spotting' | 'light' | 'medium' | 'heavy' | null;
     symptoms: string[];
@@ -45,6 +46,7 @@ const defaultState: AppState = {
     profileId: null,
     pin: null,
     full_name: null,
+    notificationsEnabled: false,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -116,6 +118,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 goal: profile?.goal || 'track',
                 pin: profile?.pin || null,
                 full_name: profile?.full_name || null,
+                notificationsEnabled: profile?.notifications_enabled || false,
                 logs: logsMap
             }));
         } catch (error) {
@@ -136,6 +139,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (updates.goal !== undefined) profileUpdates.goal = updates.goal;
             if (updates.pin !== undefined) profileUpdates.pin = updates.pin;
             if (updates.full_name !== undefined) profileUpdates.full_name = updates.full_name;
+            if (updates.notificationsEnabled !== undefined) profileUpdates.notifications_enabled = updates.notificationsEnabled;
 
             if (Object.keys(profileUpdates).length > 0) {
                 await supabase

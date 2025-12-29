@@ -1,19 +1,58 @@
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfToday, subDays, parseISO } from 'date-fns';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { analyzeCycles } from '../lib/cycleUtils';
 
 const Dashboard = () => {
     const { state } = useAppContext();
     const today = new Date();
     const [displayedDate, setDisplayedDate] = useState(today);
 
+    // Smart Predictions
+    const { averageLength, lastPeriodStart: calculatedLastStart } = useMemo(() =>
+        analyzeCycles(state.logs, state.cycleLength),
+        [state.logs, state.cycleLength]);
+
+    const activeCycleLength = averageLength;
+    const activeLastStart = calculatedLastStart || (state.lastPeriodStart ? new Date(state.lastPeriodStart) : today);
+
     // Basic calculations
-    const lastStart = state.lastPeriodStart ? new Date(state.lastPeriodStart) : today;
-    const cycleDay = (differenceInDays(today, lastStart) % state.cycleLength) + 1;
+    const cycleDay = (differenceInDays(today, activeLastStart) % activeCycleLength) + 1;
+    const daysUntilNext = activeCycleLength - cycleDay + 1;
+
     const todayKey = format(today, 'yyyy-MM-dd');
     const todayLog = state.logs[todayKey];
+
+    // Notifications Logic
+    useEffect(() => {
+        if (!state.notificationsEnabled) return;
+        if (Notification.permission !== 'granted') return;
+
+        const notifKey = `notif_sent_${todayKey}`;
+        if (localStorage.getItem(notifKey)) return;
+
+        // 1. Period Reminder
+        if (daysUntilNext <= 2 && daysUntilNext > 0) {
+            new Notification("Period Coming Soon", {
+                body: `Your period is likely to start in ${daysUntilNext} days. Preparing is caring!`,
+                icon: '/pwa-192x192.png' // ensuring icon exists or fallback
+            });
+            localStorage.setItem(notifKey, 'true');
+            return;
+        }
+
+        // 2. Log Reminder (after 6 PM)
+        const currentHour = new Date().getHours();
+        if (!todayLog && currentHour >= 18) {
+            new Notification("Log Your Symptoms", {
+                body: "How are you feeling today? Take a moment to log your symptoms.",
+                icon: '/pwa-192x192.png'
+            });
+            localStorage.setItem(notifKey, 'true');
+        }
+    }, [state.notificationsEnabled, daysUntilNext, todayLog, todayKey]);
 
     // Phases (simplified)
     let phase = "Follicular Phase";
@@ -43,8 +82,6 @@ const Dashboard = () => {
     const inferredPeriodDates = useMemo(() => {
         const dates = new Set<string>();
         const sortedLogKeys = Object.keys(state.logs).sort();
-
-        let lastInferredEnd: Date | null = null;
 
         sortedLogKeys.forEach(dateKey => {
             const log = state.logs[dateKey];
@@ -81,8 +118,8 @@ const Dashboard = () => {
         if (isBefore(date, startOfToday())) return 'normal';
 
         // 3. For Future/Today: Use Prediction logic
-        const diff = differenceInDays(date, lastStart) % state.cycleLength;
-        const normalizedDiff = diff < 0 ? diff + state.cycleLength : diff;
+        const diff = differenceInDays(date, activeLastStart) % activeCycleLength;
+        const normalizedDiff = diff < 0 ? diff + activeCycleLength : diff;
 
         if (normalizedDiff < state.periodLength) return 'period';
         if (normalizedDiff === 13) return 'ovulation';
@@ -128,9 +165,11 @@ const Dashboard = () => {
                             <div>
                                 <p className="text-slate-600 dark:text-text-secondary text-base font-normal leading-normal flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-xl">event_available</span>
-                                    {cycleDay <= state.periodLength ? "Period is here" : `Next period in ${state.cycleLength - cycleDay + 1} days`}
+                                    {cycleDay <= state.periodLength ? "Period is here" : `Next period in ${daysUntilNext} days`}
                                 </p>
-                                <p className="text-slate-500 dark:text-gray-500 text-xs mt-1 pl-7">Predictions are based on your history</p>
+                                <p className="text-slate-500 dark:text-gray-500 text-xs mt-1 pl-7">
+                                    Predictions based on {averageLength !== state.cycleLength ? 'smart analysis' : 'your settings'}
+                                </p>
                             </div>
                             <Link
                                 to="/insights"

@@ -17,6 +17,43 @@ const Settings = () => {
         }
     };
 
+    const handleExport = () => {
+        // Simple CSV generation
+        const headers = ['Date', 'Flow', 'Symptoms', 'Moods', 'Notes'];
+        const logs = Object.entries(state.logs).map(([date, log]) => {
+            return [
+                date,
+                log.flow || '',
+                (log.symptoms || []).join('; '),
+                (log.moods || []).join('; '),
+                (log.notes || '').replace(/,/g, ' ') // Remove commas to prevent CSV breakage
+            ].join(',');
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...logs].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "my_cycle_data.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const toggleNotifications = async () => {
+        if (!state.notificationsEnabled) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                updateState({ notificationsEnabled: true });
+                new Notification("Notifications Enabled", { body: "We'll remind you when your period is coming." });
+            } else {
+                alert("Please enable notifications in your browser settings.");
+            }
+        } else {
+            updateState({ notificationsEnabled: false });
+        }
+    };
+
     return (
         <div className="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark pb-24">
             <header className="sticky top-0 z-50 flex items-center bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md p-4 pb-2 justify-between border-b border-gray-200 dark:border-white/5">
@@ -71,7 +108,34 @@ const Settings = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 px-4">
+                <div className="mt-4 px-4">
+                    <button
+                        onClick={toggleNotifications}
+                        className="w-full flex items-center justify-between p-4 rounded-xl bg-white dark:bg-surface-dark shadow-sm border border-slate-100 dark:border-white/5 transition-colors"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={`flex items-center justify-center size-8 rounded-full ${state.notificationsEnabled ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-500'}`}>
+                                <span className="material-symbols-outlined text-[18px]">notifications</span>
+                            </div>
+                            <span className="font-semibold text-slate-900 dark:text-white">Daily Reminders</span>
+                        </div>
+                        <div className={`w-12 h-6 rounded-full transition-colors relative ${state.notificationsEnabled ? 'bg-primary' : 'bg-slate-200 dark:bg-white/10'}`}>
+                            <div className={`absolute top-1 size-4 bg-white rounded-full transition-transform ${state.notificationsEnabled ? 'left-7' : 'left-1'}`}></div>
+                        </div>
+                    </button>
+                </div>
+
+                <div className="mt-4 px-4">
+                    <button
+                        onClick={handleExport}
+                        className="w-full py-4 text-center rounded-xl bg-white dark:bg-surface-dark text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-bold transition-colors shadow-sm flex items-center justify-center gap-2 border border-slate-100 dark:border-white/5"
+                    >
+                        <span className="material-symbols-outlined">download</span>
+                        Export Data (CSV)
+                    </button>
+                </div>
+
+                <div className="mt-4 px-4 pb-8">
                     <button
                         onClick={handleReset}
                         className="w-full py-4 text-center rounded-xl bg-white dark:bg-surface-dark text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 font-bold transition-colors shadow-sm"
@@ -79,38 +143,40 @@ const Settings = () => {
                         Sign Out
                     </button>
                 </div>
-            </main>
+            </main >
 
             {/* Edit Modal */}
-            {editing && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-surface-dark w-full max-w-sm rounded-2xl p-6 shadow-xl">
-                        <h3 className="text-lg font-bold mb-4">Edit {editing.label}</h3>
-                        <input
-                            type={editing.type}
-                            value={editing.value}
-                            onChange={(e) => setEditing({ ...editing, value: editing.type === 'number' ? Number(e.target.value) : e.target.value })}
-                            className="w-full bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary mb-6 text-slate-900 dark:text-white"
-                            autoFocus
-                        />
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setEditing(null)}
-                                className="flex-1 py-3 rounded-xl font-semibold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/70"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="flex-1 py-3 rounded-xl font-semibold bg-primary text-white hover:bg-primary/90"
-                            >
-                                Save
-                            </button>
+            {
+                editing && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white dark:bg-surface-dark w-full max-w-sm rounded-2xl p-6 shadow-xl">
+                            <h3 className="text-lg font-bold mb-4">Edit {editing.label}</h3>
+                            <input
+                                type={editing.type}
+                                value={editing.value}
+                                onChange={(e) => setEditing({ ...editing, value: editing.type === 'number' ? Number(e.target.value) : e.target.value })}
+                                className="w-full bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary mb-6 text-slate-900 dark:text-white"
+                                autoFocus
+                            />
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setEditing(null)}
+                                    className="flex-1 py-3 rounded-xl font-semibold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/70"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    className="flex-1 py-3 rounded-xl font-semibold bg-primary text-white hover:bg-primary/90"
+                                >
+                                    Save
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

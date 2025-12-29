@@ -2,7 +2,7 @@ import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useState, useMemo } from 'react';
-import { subMonths, isAfter, parseISO } from 'date-fns';
+import { subMonths, isAfter, parseISO, differenceInDays } from 'date-fns';
 
 const Insights = () => {
     const { state } = useAppContext();
@@ -45,6 +45,80 @@ const Insights = () => {
 
     // Better Approach: Mock specific to user actions if needed, OR just show empty state. 
     // User requested "do not show unreal data".
+    // Symptom Correlation Analysis
+    const symptomCorrelations = useMemo(() => {
+        const correlations: Record<string, Record<string, number>> = {};
+
+        // Find all period starts
+
+        // Simplified approach: For each log, just check relative to the LAST period (activeLastStart) 
+        // OR find the period start that is closest BEFORE the log date.
+        // It's hard to be perfect without full cycle history. 
+        // Let's assume most recent cycle logic applies to recent history for now.
+
+        filteredLogs.forEach(log => {
+            if (log.symptoms.length === 0) return;
+
+            // Find hypothetical start of the cycle this log belongs to.
+            // Cycle Start = Date - (Date % CycleLength) ?? No, that assumes perfect regularity forever.
+            // Let's just use "Days Before Next Expected" or "Days After Last Known".
+
+            // Actually, we can just say:
+            // Day 1-5: Menstrual
+            // Day 6-12: Follicular
+            // Day 13-16: Ovulation
+            // Day 17+: Luteal / PMS
+
+            // We need the "Cycle Day" for this reported log.
+            // We can estimate it if we know the Period Start valid for that date.
+            // Let's find the period start closest to this date (before or on).
+
+            // Since we don't have an easy "get starts" function exposed yet, let's just use the CycleUtils if we can?
+            // Actually I defined analyzeCycles in lib/cycleUtils.ts but it returns aggregates.
+            // Let's just reconstruct starts locally or improve cycleUtils later.
+            // For now: Estimate using modulo of cycleLength from a known anchor (activeLastStart) is risky for old data.
+            // Let's only analyze "Menstrual" vs "Non-Menstrual" based on Flow?
+
+            // Better: If log has FLOW, it's Menstrual.
+            // If log is ~14 days before a FLOW log, it's Ovulation.
+            // If log is 1-7 days before a FLOW log, it's PMS.
+
+            // Let's try to look AHEAD for the next period start to classify "PMS".
+            const logDate = parseISO(log.date);
+
+            // Find next flow date
+            // This is slow O(N^2) but N is small (365 logs tops).
+            let nextFlowDate: Date | null = null;
+            let minDiff = Infinity;
+
+            for (const otherLog of filteredLogs) {
+                if (otherLog.flow) {
+                    const d = parseISO(otherLog.date);
+                    if (isAfter(d, logDate)) {
+                        const diff = differenceInDays(d, logDate);
+                        if (diff < minDiff && diff < 40) { // must be close
+                            minDiff = diff;
+                            nextFlowDate = d;
+                        }
+                    }
+                }
+            }
+
+            let phase = 'Follicular Phase';
+            if (log.flow) phase = 'Menstrual Phase';
+            else if (nextFlowDate && minDiff <= 7) phase = 'Luteal Phase (PMS)';
+            else if (nextFlowDate && minDiff > 7 && minDiff <= 16) phase = 'Ovulatory Phase';
+            else phase = 'Follicular Phase';
+
+            log.symptoms.forEach(s => {
+                if (!correlations[s]) correlations[s] = {};
+                correlations[s][phase] = (correlations[s][phase] || 0) + 1;
+            });
+        });
+
+        return correlations;
+    }, [filteredLogs, state.logs, state.cycleLength]);
+
     const chartData = useMemo(() => {
         if (filteredLogs.length === 0) return [];
 
@@ -146,6 +220,34 @@ const Insights = () => {
                             <p className="text-slate-400 dark:text-white/40 text-sm">Not enough data to show trends.</p>
                         )}
                     </div>
+                </div>
+            </div>
+
+            <div className="px-4 pb-2">
+                <div className="flex flex-col rounded-2xl bg-white dark:bg-surface-dark p-6 shadow-sm border border-slate-100 dark:border-white/5">
+                    <h3 className="text-slate-900 dark:text-white text-base font-bold mb-4">Symptom Patterns</h3>
+                    <p className="text-sm text-slate-500 dark:text-gray-400 italic">
+                        Based on your recent logs, you often experience:
+                    </p>
+                    <ul className="mt-3 space-y-2">
+                        {sortedSymptoms.map(([label]) => (
+                            <li key={label} className="text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                                <span className="material-symbols-outlined text-[18px] text-primary pt-0.5">check_circle</span>
+                                <span>
+                                    <span className="font-semibold capitalize">{label}</span>
+                                    {/* Calculated Phase Correlation */}
+                                    <span className="text-slate-400 block text-xs">
+                                        {(() => {
+                                            const phases = symptomCorrelations[label];
+                                            if (!phases) return "Various times";
+                                            const topPhase = Object.entries(phases).sort((a, b) => b[1] - a[1])[0];
+                                            return topPhase ? `Common during ${topPhase[0]}` : "Various times";
+                                        })()}
+                                    </span>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
 

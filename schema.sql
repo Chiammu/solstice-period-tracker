@@ -12,6 +12,8 @@ create table profiles (
   cycle_length int default 28,
   period_length int default 5,
   goal text default 'track',
+  pin text,
+  notifications_enabled boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -54,3 +56,7 @@ $$ language plpgsql security definer;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Migrations (Run these if tables exist)
+-- alter table profiles add column pin text;
+-- alter table profiles add column notifications_enabled boolean default false;
