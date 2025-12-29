@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const symptomsList = [
     { id: 'cramps', label: 'Cramps', icon: 'spa' },
@@ -22,25 +22,33 @@ const moodsList = [
 ];
 
 const LogDetails = () => {
-    const { updateLog } = useAppContext();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(() => {
+        const dateParam = searchParams.get('date');
+        return dateParam ? new Date(dateParam) : new Date();
+    });
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
+
+    // Access state directly for data loading
+    const { state, updateLog } = useAppContext();
 
     // Load data for selected date
     useEffect(() => {
-        // Here you would typically load from state if available for this date
-        // Since we don't have direct access to state.logs for arbitrary dates easily in this component without props or checking context, 
-        // let's assume empty for new dates or implement state check if needed.
-        // For now, reset fields when date changes to allow new entry
-        setFlow(null);
-        setSelectedSymptoms([]);
-        setSelectedMoods([]);
-        setNotes('');
-
-        // Check if log exists in context (simplified access)
-        // Ideally we pass state logs or check context
-    }, [dateKey]);
+        const existingLog = state.logs[dateKey];
+        if (existingLog) {
+            setFlow(existingLog.flow || null);
+            setSelectedSymptoms(existingLog.symptoms || []);
+            setSelectedMoods(existingLog.moods || []);
+            setNotes(existingLog.notes || '');
+        } else {
+            // Reset if new date
+            setFlow(null);
+            setSelectedSymptoms([]);
+            setSelectedMoods([]);
+            setNotes('');
+        }
+    }, [dateKey, state.logs]);
 
     const [flow, setFlow] = useState<'spotting' | 'light' | 'medium' | 'heavy' | null>(null);
     const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);

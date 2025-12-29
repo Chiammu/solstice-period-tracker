@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfToday, subDays, parseISO } from 'date-fns';
 import { useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { analyzeCycles } from '../lib/cycleUtils';
 
 const Dashboard = () => {
     const { state } = useAppContext();
+    const navigate = useNavigate();
     const today = new Date();
     const [displayedDate, setDisplayedDate] = useState(today);
 
@@ -55,19 +56,6 @@ const Dashboard = () => {
     }, [state.notificationsEnabled, daysUntilNext, todayLog, todayKey]);
 
     // Phases (simplified)
-    let phase = "Follicular Phase";
-    let phaseIcon = "eco";
-
-    if (cycleDay <= state.periodLength) {
-        phase = "Menstrual Phase";
-        phaseIcon = "water_drop";
-    } else if (cycleDay >= 13 && cycleDay <= 15) {
-        phase = "Ovulatory Phase";
-        phaseIcon = "auto_awesome";
-    } else if (cycleDay > 15) {
-        phase = "Luteal Phase";
-        phaseIcon = "nightlight";
-    }
 
     const days = eachDayOfInterval({
         start: startOfMonth(displayedDate),
@@ -130,10 +118,7 @@ const Dashboard = () => {
     return (
         <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
             <header className="sticky top-0 z-10 flex items-center bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md p-4 pb-2 justify-between border-b border-transparent dark:border-white/5 transition-colors">
-                <button className="text-slate-900 dark:text-white flex size-12 shrink-0 items-center justify-start hover:opacity-70 transition-opacity">
-                    <span className="material-symbols-outlined text-3xl">menu</span>
-                </button>
-                <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight flex-1 text-center">Cycle Tracker</h2>
+                <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight flex-1">Calendar</h2>
                 <div className="flex w-12 items-center justify-end">
                     <button
                         onClick={resetToToday}
@@ -145,41 +130,6 @@ const Dashboard = () => {
             </header>
 
             <main className="flex-1 flex flex-col gap-6 p-4">
-                {/* Cycle Status Card */}
-                <div className="flex flex-col items-stretch justify-start rounded-xl overflow-hidden shadow-lg bg-white dark:bg-surface-dark transition-colors">
-                    <div className="relative w-full h-40 bg-cover bg-center" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmUAdJt5V2IByAFstp6WEceiPSkqIpW4cxW3ttCG17gwYShFz7dKmYT3zaUSLm1oOIE0q_k-rbRV2LgabxT7EXJxMlYWB5vDgqYD1qc0ZESgmCkRSOhi-vUUK2bXP6vg-1Fxd8AJS3OpXy6EhMtPJaPKiGuQbQnwYkO_ILQEvYzVroxJvG7FPTHgsHErRNnSMKXfeIpZVUxe1efM_xpEJOU4dYlgpVxHsUouvf248z0v6zeYoq5YkjlwDbfd07BimuEh99DZbrV4OD")' }}>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                        <div className="absolute bottom-3 left-4">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-xs font-medium text-white mb-1">
-                                <span className="material-symbols-outlined text-[16px] text-primary">{phaseIcon}</span>
-                                {phase}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex w-full grow flex-col items-stretch justify-center gap-3 p-5">
-                        <div className="flex flex-col">
-                            <p className="text-text-secondary text-sm font-medium uppercase tracking-wider mb-1">Current Status</p>
-                            <h3 className="text-slate-900 dark:text-white text-3xl font-bold leading-tight">Cycle Day {cycleDay}</h3>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:items-end gap-4 justify-between pt-2">
-                            <div>
-                                <p className="text-slate-600 dark:text-text-secondary text-base font-normal leading-normal flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary text-xl">event_available</span>
-                                    {cycleDay <= state.periodLength ? "Period is here" : `Next period in ${daysUntilNext} days`}
-                                </p>
-                                <p className="text-slate-500 dark:text-gray-500 text-xs mt-1 pl-7">
-                                    Predictions based on {averageLength !== state.cycleLength ? 'smart analysis' : 'your settings'}
-                                </p>
-                            </div>
-                            <Link
-                                to="/insights"
-                                className="flex shrink-0 items-center justify-center rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 active:scale-95 transition-all text-white text-sm font-semibold shadow-md shadow-primary/20"
-                            >
-                                View Insights
-                            </Link>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Calendar View */}
                 <div className="flex flex-col gap-4">
@@ -208,12 +158,16 @@ const Dashboard = () => {
                             const isToday = isSameDay(day, today);
 
                             return (
-                                <div key={day.toString()} className="h-10 w-full relative flex items-center justify-center">
+                                <div
+                                    key={day.toString()}
+                                    className="h-14 w-full relative flex items-center justify-center cursor-pointer"
+                                    onClick={() => navigate(`/log?date=${format(day, 'yyyy-MM-dd')}`)}
+                                >
                                     {status === 'period' && (
                                         <div className="absolute inset-y-1 w-full bg-primary/20 dark:bg-primary/30"></div>
                                     )}
-                                    <div className={`relative z-10 flex size-9 items-center justify-center rounded-full text-sm font-medium transition-all ${status === 'period' ? 'bg-primary text-white' :
-                                        isToday ? 'border-2 border-primary text-primary font-bold bg-primary/10' :
+                                    <div className={`relative z-10 flex size-10 items-center justify-center rounded-full text-sm font-medium transition-all ${status === 'period' ? 'bg-primary text-white' :
+                                        isToday ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/40 transform scale-110' :
                                             status === 'ovulation' ? 'border border-dashed border-primary text-primary' :
                                                 'text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10'
                                         }`}>
@@ -283,5 +237,4 @@ const Dashboard = () => {
         </div>
     );
 };
-
 export default Dashboard;

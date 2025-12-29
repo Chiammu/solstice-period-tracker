@@ -10,19 +10,8 @@ const Setup = () => {
     const [periodLength, setPeriodLength] = useState(5);
     const [goal, setGoal] = useState('track');
     const [name, setName] = useState('');
-    const [pin, setPin] = useState('');
-    const [confirmPin, setConfirmPin] = useState('');
-    const [pinError, setPinError] = useState('');
 
     const handleComplete = () => {
-        if (pin && pin !== confirmPin) {
-            setPinError("PINs do not match");
-            return;
-        }
-        if (pin && pin.length < 4) {
-            setPinError("PIN must be at least 4 digits");
-            return;
-        }
 
         updateState({
             lastPeriodStart: selectedDate.toISOString(),
@@ -30,7 +19,6 @@ const Setup = () => {
             periodLength,
             goal,
             full_name: name,
-            pin: pin || null,
             setupComplete: true
         });
     };
@@ -81,41 +69,6 @@ const Setup = () => {
                     </div>
                 </div>
 
-                {/* Question 0.5: Security */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold">2</span>
-                        <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Secure your data</h3>
-                        <span className="text-xs text-slate-400 ml-auto">(Optional)</span>
-                    </div>
-                    <div className="bg-white dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-white/5 flex flex-col gap-4">
-                        <div>
-                            <label className="text-xs text-slate-500 mb-1 block">Create PIN</label>
-                            <input
-                                type="password"
-                                value={pin}
-                                onChange={(e) => { setPin(e.target.value); setPinError(''); }}
-                                placeholder="****"
-                                maxLength={4}
-                                className="w-full bg-slate-50 dark:bg-black/20 rounded-lg px-4 py-3 text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-white"
-                            />
-                        </div>
-                        {pin.length > 0 && (
-                            <div>
-                                <label className="text-xs text-slate-500 mb-1 block">Confirm PIN</label>
-                                <input
-                                    type="password"
-                                    value={confirmPin}
-                                    onChange={(e) => { setConfirmPin(e.target.value); setPinError(''); }}
-                                    placeholder="****"
-                                    maxLength={4}
-                                    className={`w-full bg-slate-50 dark:bg-black/20 rounded-lg px-4 py-3 text-lg tracking-widest focus:outline-none focus:ring-2 ${pinError ? 'ring-red-500 bg-red-50 dark:bg-red-900/10' : 'focus:ring-primary/50'} text-slate-900 dark:text-white`}
-                                />
-                                {pinError && <p className="text-red-500 text-xs mt-1">{pinError}</p>}
-                            </div>
-                        )}
-                    </div>
-                </div>
 
                 {/* Question 1: Last Period */}
                 <div className="mb-8">
